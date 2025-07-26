@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Página Inicial</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
   </head>
   <body>
     <h2>Simulador de Caixa de Supermercado</h2>
@@ -14,13 +17,13 @@
         <th>Preço (R$)</th>
         <th>Estoque</th>
       </tr>
-      {% for produto in produto}
+      {% for produto in produtos %}
       <tr>
         <td>{{ produto.nome }}</td>
         <td>{{ "%.2f"|format(produto.preco) }}</td>
         <td>{{ produto.estoque }}</td>
       </tr>
-      {% end for %}
+      {% endfor %}
     </table>
   </body>
 </html>
