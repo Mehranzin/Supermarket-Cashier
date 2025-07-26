@@ -6,6 +6,21 @@
     <title>Página Inicial</title>
   </head>
   <body>
-    <p>Olá, esse é um projeto de caixa de supermercado</p>
+    <h2>Simulador de Caixa de Supermercado</h2>
+
+    <table border="1" cellpadding="10">
+      <tr>
+        <th>Produto</th>
+        <th>Preço (R$)</th>
+        <th>Estoque</th>
+      </tr>
+      {% for produto in produto}
+      <tr>
+        <td>{{ produto.nome }}</td>
+        <td>{{ "%.2f"|format(produto.preco) }}</td>
+        <td>{{ produto.estoque }}</td>
+      </tr>
+      {% end for %}
+    </table>
   </body>
 </html>
