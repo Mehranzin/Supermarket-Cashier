@@ -13,6 +13,10 @@ produtos = [
 def index():
     return render_template("index.html", produtos=produtos)
 
+@app.route("/lista")
+def lista():
+    return render_template("lista.html", produtos=produtos)
+
 if __name__ == "__main__":
     server = Server(app.wsgi_app)
     server.serve(debug=True)
