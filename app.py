@@ -17,6 +17,10 @@ def index():
 def lista():
     return render_template("lista.html", produtos=produtos)
 
+@app.route("/cadastro")
+def cadastro():
+    return render_template("cadastro.html", produtos=produtos)
+
 if __name__ == "__main__":
     server = Server(app.wsgi_app)
     server.serve(debug=True)
