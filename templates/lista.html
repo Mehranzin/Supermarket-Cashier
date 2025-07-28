@@ -18,7 +18,11 @@
         <h2>Lista de Mercadorias</h2>
         <ol>
           {% for produto in produtos %}
-          <li>{{ produto.nome }} - R$ {{ produto.preco }}</li>
+          <li>
+            <strong>{{ produto.nome }}</strong> - {{ produto.peso }} - R$ {{
+            produto.preco }} - Validade: {{ produto.validade }} - Estoque: {{
+            produto.estoque }} - Código: {{ produto.codigo }}
+          </li>
           {% endfor %}
         </ol>
       </div>
