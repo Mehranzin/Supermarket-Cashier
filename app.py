@@ -17,6 +17,11 @@ def index():
 
     if request.method == "POST":
         codigo = request.form["codigo"].strip()
+        quantidade = int(request.form.get("quantidade", 1))
+        if quantidade < 1:
+            flash("Quantidade deve ser no mínimo 1.", "error")
+            return redirect(url_for("index"))
+            
         conn = conectar()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM produtos WHERE codigo LIKE ? ORDER BY codigo LIMIT 1", (codigo + '%',))
@@ -35,25 +40,26 @@ def index():
         carrinho = session["carrinho"]
 
         if id_produto in carrinho:
-            if carrinho[id_produto]["quantidade"] < estoque:
-                carrinho[id_produto]["quantidade"] += 1
-                flash(f"Quantidade de {nome} aumentada para {carrinho[id_produto]['quantidade']}.", "success")
+            nova_quantidade = carrinho[id_produto]["quantidade"] + quantidade
+            if nova_quantidade <= estoque:
+                carrinho[id_produto]["quantidade"] = nova_quantidade
+                flash(f"Quantidade de {nome} aumentada para {nova_quantidade}.", "success")
             else:
                 flash(f"Estoque insuficiente para o produto {nome}.", "error")
         else:
-            if estoque > 0:
+            if quantidade <= estoque:
                 carrinho[id_produto] = {
                     "nome": nome,
                     "preco": preco,
-                    "quantidade": 1,
+                    "quantidade": quantidade,
                     "estoque": estoque
                 }
+                session["ultimo_id"] = id_produto
                 flash(f"{nome} adicionado ao carrinho.", "success")
             else:
-                flash(f"Produto {nome} está sem estoque.", "error")
+                flash(f"Quantidade solicitada maior que o estoque disponível para {nome}.", "error")
 
         session["carrinho"] = carrinho
-
         return redirect(url_for("index"))
 
     carrinho = session.get("carrinho", {})
@@ -124,6 +130,7 @@ def finalizar():
     conn.close()
 
     session.pop("carrinho", None)
+    session.pop("ultimo_id", None)
     flash("Compra finalizada com sucesso!", "success")
 
     return redirect(url_for("index"))

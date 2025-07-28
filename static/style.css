@@ -34,16 +34,26 @@ main .right {
   flex: 2;
   background-color: #8b5e3c;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
 }
 
 nav.nav-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
   background-color: #2c1e12;
   color: white;
   padding: 10px;
-  margin: 0;
   display: flex;
   justify-content: center;
-  gap: 35px;
+  gap: 15px;
+  z-index: 100;
+}
+
+nav.nav-footer a {
+  margin: 0 10px;
 }
 
 .produto-card {
@@ -83,6 +93,38 @@ nav.nav-footer {
   font-weight: bold;
 }
 
+.footer-carrinho {
+  margin-top: auto;
+  background-color: #6b4224;
+  border-top: 2px solid #352416;
+  padding: 15px 10px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+}
+
+.total-compra strong {
+  font-size: 24px;
+  color: #f4f4f4;
+}
+
+.btn-finalizar {
+  font-size: 20px;
+  padding: 10px 25px;
+  background-color: #352416;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-finalizar:hover {
+  background-color: #4b2e1e;
+}
+
 .flash-messages {
   list-style-type: none;
   padding: 0;
@@ -96,15 +138,21 @@ nav.nav-footer {
 }
 
 .flash-messages li.success {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
+  background-color: #2e7d32;
+  color: #c8e6c9;
+  border: 1px solid #1b5e20;
 }
 
 .flash-messages li.error {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
+  background-color: #b71c1c;
+  color: #ff8a80;
+  border: 1px solid #7f0000;
+}
+
+hr {
+  border: none;
+  border-top: 2px solid #ffffff;
+  margin: 10px 0 20px;
 }
 
 a,

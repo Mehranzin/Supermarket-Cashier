@@ -10,18 +10,19 @@
   </head>
   <body>
     <nav class="nav-top">
-      <a href="{{url_for('lista')}}">Lista</a>
-      <a href="{{url_for('cadastro')}}">Cadastrar</a>
+      <a href="{{ url_for('lista') }}">Lista</a>
+      <a href="{{ url_for('cadastro') }}">Cadastrar</a>
     </nav>
 
-    <main>
-      <div class="left">
-        <p>Conteúdo da esquerda</p>
+    <main style="display: flex; gap: 40px; padding: 20px">
+      <!-- Coluna da esquerda -->
+      <div class="left" style="flex: 1">
+        <h3>Produtos no carrinho</h3>
         <hr />
         <form
           action="{{ url_for('index') }}"
           method="POST"
-          style="margin: 20px"
+          style="margin: 20px; display: flex; gap: 10px; align-items: center"
         >
           <input
             type="text"
@@ -29,26 +30,26 @@
             id="codigo"
             placeholder="Buscar por código..."
             required
+            style="flex: 1; padding: 8px"
           />
+
+          <input
+            type="number"
+            name="quantidade"
+            min="1"
+            value="1"
+            style="width: 60px; padding: 8px"
+          />
+
+          <button type="submit" style="display: none"></button>
         </form>
-      </div>
 
-      <div class="right">
-        <h3>Carrinho</h3>
-
-        {% with messages = get_flashed_messages(with_categories=true) %} {% if
-        messages %}
-        <ul class="flash-messages">
-          {% for category, msg in messages %}
-          <li class="{{ category }}">{{ msg }}</li>
-          {% endfor %}
-        </ul>
-        {% endif %} {% endwith %} {% if carrinho %}
-        <table border="1" cellpadding="10">
+        {% if carrinho %}
+        <table border="1" cellpadding="10" style="width: 100%">
           <tr>
             <th>Produto</th>
             <th>Preço (R$)</th>
-            <th>Quantidade</th>
+            <th>Qtd</th>
             <th>Subtotal (R$)</th>
             <th>Ações</th>
           </tr>
@@ -59,35 +60,64 @@
             <td>{{ item.quantidade }}</td>
             <td>{{ "%.2f"|format(item.preco * item.quantidade) }}</td>
             <td>
-              <a href="{{ url_for('diminuir', id_produto=id_produto) }}">-</a> |
+              <a href="{{ url_for('diminuir', id_produto=id_produto) }}"
+                >Subtrair</a
+              >
+              -
               <a href="{{ url_for('remover', id_produto=id_produto) }}"
                 >Remover</a
               >
             </td>
           </tr>
           {% endfor %}
-          <tr>
-            <td colspan="3"><strong>Total</strong></td>
-            <td colspan="2"><strong>{{ "%.2f"|format(total) }}</strong></td>
-          </tr>
         </table>
+        {% endif %}
+      </div>
 
-        <form
-          action="{{ url_for('finalizar') }}"
-          method="POST"
-          style="margin-top: 15px"
-        >
-          <button type="submit">Finalizar Compra</button>
-        </form>
+      <!-- Coluna da direita -->
+      <div class="right" style="flex: 1">
+        <h3>Último Produto Adicionado</h3>
+        <hr />
 
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %}
+        <ul class="flash-messages">
+          {% for category, msg in messages %}
+          <li class="{{ category }}">{{ msg }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %} {% endwith %} {% if carrinho %} {% set ultimo_id =
+        session.get('ultimo_id') %} {% if ultimo_id and carrinho[ultimo_id] %}
+        {% set ultimo = carrinho[ultimo_id] %}
+        <p><strong>Nome:</strong> {{ ultimo.nome }}</p>
+        <p><strong>Preço:</strong> R$ {{ "%.2f"|format(ultimo.preco) }}</p>
+        <p><strong>Quantidade:</strong> {{ ultimo.quantidade }}</p>
+        <p>
+          <strong>Subtotal:</strong> R$ {{ "%.2f"|format(ultimo.preco *
+          ultimo.quantidade) }}
+        </p>
         {% else %}
+        <p>Nenhum produto adicionado recentemente.</p>
+        {% endif %} {% else %}
         <p>Nenhum produto no carrinho.</p>
         {% endif %}
+
+        <div class="footer-carrinho">
+          <div class="total-compra">
+            <strong>Total: R$ {{ "%.2f"|format(total) }}</strong>
+          </div>
+
+          <form action="{{ url_for('finalizar') }}" method="POST">
+            <button type="submit" class="btn-finalizar">
+              Finalizar Compra
+            </button>
+          </form>
+        </div>
       </div>
     </main>
 
     <nav class="nav-footer">
-      <a href="{{url_for('index')}}">Início</a>
+      <a href="{{ url_for('index') }}">Início</a>
       <a href="javascript:history.back()">Voltar</a>
     </nav>
   </body>
