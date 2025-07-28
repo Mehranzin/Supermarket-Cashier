@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
+from livereload import Server
 from banco import inicializar_banco
 
 app = Flask(__name__)
@@ -61,4 +62,5 @@ def adicionar():
     return redirect(url_for("lista"))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    server = Server(app.wsgi_app)
+    server.serve(debug=True, port=5000)
