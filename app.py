@@ -19,7 +19,7 @@ def index():
         codigo = request.form["codigo"].strip()
         conn = conectar()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM produtos WHERE codigo LIKE ?", (codigo + '%',))
+        cursor.execute("SELECT * FROM produtos WHERE codigo LIKE ? ORDER BY codigo LIMIT 1", (codigo + '%',))
         produto = cursor.fetchone()
         conn.close()
 
