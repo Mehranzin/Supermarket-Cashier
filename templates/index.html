@@ -18,24 +18,71 @@
       <div class="left">
         <p>Conteúdo da esquerda</p>
         <hr />
+        <form
+          action="{{ url_for('index') }}"
+          method="POST"
+          style="margin: 20px"
+        >
+          <input
+            type="text"
+            name="codigo"
+            id="codigo"
+            placeholder="Buscar por código..."
+            required
+          />
+        </form>
       </div>
+
       <div class="right">
+        <h3>Carrinho</h3>
+
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %}
+        <ul class="flash-messages">
+          {% for category, msg in messages %}
+          <li class="{{ category }}">{{ msg }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %} {% endwith %} {% if carrinho %}
         <table border="1" cellpadding="10">
-          <p>Conteúdo da direita</p>
-          <hr />
           <tr>
             <th>Produto</th>
             <th>Preço (R$)</th>
-            <th>Estoque</th>
+            <th>Quantidade</th>
+            <th>Subtotal (R$)</th>
+            <th>Ações</th>
           </tr>
-          {% for produto in produtos %}
+          {% for id_produto, item in carrinho.items() %}
           <tr>
-            <td>{{ produto.nome }}</td>
-            <td>{{ "%.2f"|format(produto.preco) }}</td>
-            <td>{{ produto.estoque }}</td>
+            <td>{{ item.nome }}</td>
+            <td>{{ "%.2f"|format(item.preco) }}</td>
+            <td>{{ item.quantidade }}</td>
+            <td>{{ "%.2f"|format(item.preco * item.quantidade) }}</td>
+            <td>
+              <a href="{{ url_for('diminuir', id_produto=id_produto) }}">-</a> |
+              <a href="{{ url_for('remover', id_produto=id_produto) }}"
+                >Remover</a
+              >
+            </td>
           </tr>
           {% endfor %}
+          <tr>
+            <td colspan="3"><strong>Total</strong></td>
+            <td colspan="2"><strong>{{ "%.2f"|format(total) }}</strong></td>
+          </tr>
         </table>
+
+        <form
+          action="{{ url_for('finalizar') }}"
+          method="POST"
+          style="margin-top: 15px"
+        >
+          <button type="submit">Finalizar Compra</button>
+        </form>
+
+        {% else %}
+        <p>Nenhum produto no carrinho.</p>
+        {% endif %}
       </div>
     </main>
 
