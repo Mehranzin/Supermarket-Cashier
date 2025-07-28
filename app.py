@@ -1,5 +1,4 @@
 from flask import Flask, render_template
-from livereload import Server
 
 app = Flask(__name__)
 
@@ -22,5 +21,4 @@ def cadastro():
     return render_template("cadastro.html", produtos=produtos)
 
 if __name__ == "__main__":
-    server = Server(app.wsgi_app)
-    server.serve(debug=True)
+    app.run(debug=True)
