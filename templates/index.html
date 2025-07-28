@@ -9,21 +9,37 @@
     />
   </head>
   <body>
-    <h2>Simulador de Caixa de Supermercado</h2>
+    <nav class="nav-top">
+      <a href="{{url_for('lista')}}">Lista</a>
+    </nav>
 
-    <table border="1" cellpadding="10">
-      <tr>
-        <th>Produto</th>
-        <th>Preço (R$)</th>
-        <th>Estoque</th>
-      </tr>
-      {% for produto in produtos %}
-      <tr>
-        <td>{{ produto.nome }}</td>
-        <td>{{ "%.2f"|format(produto.preco) }}</td>
-        <td>{{ produto.estoque }}</td>
-      </tr>
-      {% endfor %}
-    </table>
+    <main>
+      <div class="left">
+        <p>Conteúdo da esquerda</p>
+        <hr />
+      </div>
+      <div class="right">
+        <table border="1" cellpadding="10">
+          <p>Conteúdo da direita</p>
+          <hr />
+          <tr>
+            <th>Produto</th>
+            <th>Preço (R$)</th>
+            <th>Estoque</th>
+          </tr>
+          {% for produto in produtos %}
+          <tr>
+            <td>{{ produto.nome }}</td>
+            <td>{{ "%.2f"|format(produto.preco) }}</td>
+            <td>{{ produto.estoque }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </main>
+
+    <nav class="nav-footer">
+      <a href="{{url_for('cadastro')}}">Cadastrar</a>
+    </nav>
   </body>
 </html>

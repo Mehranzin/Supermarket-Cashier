@@ -1,4 +1,52 @@
 body {
+  margin: 0;
   font-family: Arial, sans-serif;
-  justify-items: center;
+  color: white;
+}
+
+nav.nav-top {
+  background-color: #352416;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  font-size: 20px;
+  margin: 0;
+}
+
+main {
+  min-height: 80vh;
+  padding: 40px;
+  background-color: #f4f4f4;
+  display: flex;
+  gap: 10px;
+  margin: 0;
+}
+
+main .left {
+  flex: 3;
+  background-color: #4b2e1e;
+  padding: 20px;
+}
+
+main .right {
+  flex: 2;
+  background-color: #8b5e3c;
+  padding: 20px;
+}
+
+nav.nav-footer {
+  background-color: #2c1e12;
+  color: white;
+  padding: 10px;
+  text-align: center;
+  margin: 0;
+}
+
+a,
+a:visited,
+a:hover,
+a:active {
+  font-weight: bold;
+  color: white;
+  text-decoration: none;
 }
