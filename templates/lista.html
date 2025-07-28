@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Lista de Mercadorias</title>
     <link
       rel="stylesheet"
@@ -12,23 +12,52 @@
   <body>
     <nav class="nav-top">
       <a href="{{url_for('lista')}}">Lista</a>
+      <a href="{{url_for('cadastro')}}">Cadastrar</a>
     </nav>
     <main>
       <div class="left">
         <h2>Lista de Mercadorias</h2>
-        <ol>
+        <div id="produtos-lista">
           {% for produto in produtos %}
-          <li>
-            <strong>{{ produto.nome }}</strong> - {{ produto.peso }} - R$ {{
-            produto.preco }} - Validade: {{ produto.validade }} - Estoque: {{
-            produto.estoque }} - Código: {{ produto.codigo }}
-          </li>
+          <div class="produto-card" tabindex="0">
+            <div class="produto-nome">
+              <span class="nome">{{ produto.nome }}</span>
+              <span class="quantidade">Quantidade: {{ produto.estoque }}</span>
+            </div>
+            <div class="produto-detalhes">
+              <div><strong>Peso:</strong> {{ produto.peso }}</div>
+              <div><strong>Preço:</strong> R$ {{ produto.preco }}</div>
+              <div><strong>Validade:</strong> {{ produto.validade }}</div>
+              <div><strong>Estoque:</strong> {{ produto.estoque }}</div>
+              <div><strong>Código:</strong> {{ produto.codigo }}</div>
+            </div>
+          </div>
           {% endfor %}
-        </ol>
+        </div>
       </div>
     </main>
     <nav class="nav-footer">
       <a href="javascript:history.back()">Voltar</a>
     </nav>
+
+    <script>
+      // Pega todos os cards de produto
+      const cards = document.querySelectorAll(".produto-card");
+
+      cards.forEach((card) => {
+        card.addEventListener("click", () => {
+          // Alterna a classe ativo para mostrar/esconder detalhes
+          card.classList.toggle("ativo");
+        });
+
+        // Também permite abrir com teclado (Enter/Space)
+        card.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            card.classList.toggle("ativo");
+          }
+        });
+      });
+    </script>
   </body>
 </html>

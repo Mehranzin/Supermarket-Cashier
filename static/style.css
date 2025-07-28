@@ -8,9 +8,11 @@ nav.nav-top {
   background-color: #352416;
   color: white;
   padding: 20px;
-  text-align: center;
   font-size: 20px;
   margin: 0;
+  display: flex;
+  justify-content: center;
+  gap: 35px;
 }
 
 main {
@@ -40,6 +42,43 @@ nav.nav-footer {
   padding: 10px;
   text-align: center;
   margin: 0;
+}
+
+.produto-card {
+  background-color: #6b4224;
+  color: white;
+  margin-bottom: 10px;
+  padding: 15px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.3s ease;
+}
+
+.produto-card:hover {
+  background-color: #352113;
+}
+
+.produto-nome {
+  font-size: 1.1em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.produto-detalhes {
+  margin-top: 10px;
+  display: none;
+  font-size: 0.95em;
+  line-height: 1.4em;
+}
+
+.produto-card.ativo .produto-detalhes {
+  display: block;
+}
+
+.produto-nome .nome {
+  font-weight: bold;
 }
 
 a,
