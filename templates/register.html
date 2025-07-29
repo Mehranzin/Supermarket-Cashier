@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Registrar</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <h2>Cadastro de Usuário</h2>
+    <form method="POST">
+      <input
+        type="text"
+        name="nome"
+        placeholder="Nome completo"
+        required
+      /><br />
+      <input type="text" name="usuario" placeholder="Usuário" required /><br />
+      <input type="password" name="senha" placeholder="Senha" required /><br />
+      <select name="cargo" required>
+        <option value="funcionario">Funcionário</option>
+        <option value="admin">Admin</option></select
+      ><br />
+      <button type="submit">Cadastrar</button>
+    </form>
+  </body>
+</html>

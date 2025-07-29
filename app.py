@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import sqlite3
 from banco import inicializar_banco
 from datetime import datetime
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = "GodIsTheTrue11"
@@ -11,7 +12,78 @@ inicializar_banco()
 def conectar():
     return sqlite3.connect("produtos.db")
 
+# --- DECORATORS ---
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if "usuario_id" not in session:
+            flash("Você precisa estar logado para acessar essa página.", "error")
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if session.get("cargo") != "admin":
+            flash("Acesso restrito ao administrador.", "error")
+            return redirect(url_for("index"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# --- ROTAS DE LOGIN ---
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        usuario = request.form["usuario"]
+        senha = request.form["senha"]
+
+        conn = conectar()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, nome, cargo FROM usuarios WHERE usuario = ? AND senha = ?", (usuario, senha))
+        user = cursor.fetchone()
+        conn.close()
+
+        if user:
+            session["usuario_id"] = user[0]
+            session["nome"] = user[1]
+            session["cargo"] = user[2]
+            flash(f"Bem-vindo, {user[1]}!", "success")
+            return redirect(url_for("index"))
+        else:
+            flash("Usuário ou senha incorretos.", "error")
+    return render_template("login.html")
+
+@app.route("/register", methods=["GET", "POST"])
+@admin_required
+def register():
+    if request.method == "POST":
+        nome = request.form["nome"]
+        usuario = request.form["usuario"]
+        senha = request.form["senha"]
+        cargo = request.form["cargo"]
+
+        conn = conectar()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("INSERT INTO usuarios (nome, usuario, senha, cargo) VALUES (?, ?, ?, ?)", 
+                           (nome, usuario, senha, cargo))
+            conn.commit()
+            flash("Usuário registrado com sucesso!", "success")
+        except sqlite3.IntegrityError:
+            flash("Usuário já existe!", "error")
+        conn.close()
+    return render_template("register.html")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("Você saiu da conta.", "success")
+    return redirect(url_for("login"))
+
+# --- ROTAS DE PRODUTO / CARRINHO ---
 @app.route("/", methods=["GET", "POST"])
+@login_required
 def index():
     if "carrinho" not in session:
         session["carrinho"] = {}
@@ -69,36 +141,31 @@ def index():
     return render_template("index.html", carrinho=carrinho, total=total)
 
 @app.route("/diminuir/<id_produto>")
+@login_required
 def diminuir(id_produto):
     carrinho = session.get("carrinho", {})
     if id_produto in carrinho:
         if carrinho[id_produto]["quantidade"] > 1:
             carrinho[id_produto]["quantidade"] -= 1
-            flash(f"Quantidade de {carrinho[id_produto]['nome']} diminuída para {carrinho[id_produto]['quantidade']}.", "success")
+            flash(f"Quantidade de {carrinho[id_produto]['nome']} diminuída.", "success")
         else:
-            nome = carrinho[id_produto]["nome"]
             carrinho.pop(id_produto)
-            flash(f"{nome} removido do carrinho.", "success")
+            flash("Produto removido do carrinho.", "success")
         session["carrinho"] = carrinho
-    else:
-        flash("Produto não encontrado no carrinho.", "error")
-
     return redirect(url_for("index"))
 
 @app.route("/remover/<id_produto>")
+@login_required
 def remover(id_produto):
     carrinho = session.get("carrinho", {})
     if id_produto in carrinho:
-        nome = carrinho[id_produto]["nome"]
         carrinho.pop(id_produto)
+        flash("Produto removido.", "success")
         session["carrinho"] = carrinho
-        flash(f"{nome} removido do carrinho.", "success")
-    else:
-        flash("Produto não encontrado no carrinho.", "error")
-
     return redirect(url_for("index"))
 
 @app.route("/finalizar", methods=["POST"])
+@login_required
 def finalizar():
     carrinho = session.get("carrinho", {})
     if not carrinho:
@@ -111,46 +178,32 @@ def finalizar():
     for id_produto, item in carrinho.items():
         cursor.execute("SELECT estoque FROM produtos WHERE id = ?", (id_produto,))
         estoque_atual = cursor.fetchone()
-        if not estoque_atual:
+        if not estoque_atual or estoque_atual[0] < item["quantidade"]:
             conn.close()
-            flash(f"Produto {item['nome']} não encontrado no banco.", "error")
-            return redirect(url_for("index"))
-        if estoque_atual[0] < item["quantidade"]:
-            conn.close()
-            flash(f"Estoque insuficiente para o produto {item['nome']}.", "error")
+            flash(f"Estoque insuficiente para {item['nome']}.", "error")
             return redirect(url_for("index"))
 
     for id_produto, item in carrinho.items():
-        cursor.execute(
-            "UPDATE produtos SET estoque = estoque - ? WHERE id = ?",
-            (item["quantidade"], id_produto)
-        )
-
+        cursor.execute("UPDATE produtos SET estoque = estoque - ? WHERE id = ?", (item["quantidade"], id_produto))
         total = item["preco"] * item["quantidade"]
         data = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        cursor.execute("""
-            INSERT INTO vendas (nome, preco, quantidade, total, data_venda)
-            VALUES (?, ?, ?, ?, ?)
-        """, (item["nome"], item["preco"], item["quantidade"], total, data))
+        cursor.execute("INSERT INTO vendas (nome, preco, quantidade, total, data_venda) VALUES (?, ?, ?, ?, ?)",
+                       (item["nome"], item["preco"], item["quantidade"], total, data))
 
     conn.commit()
     conn.close()
-
     session.pop("carrinho", None)
-    session.pop("ultimo_id", None)
-    flash("Compra finalizada e registrada com sucesso!", "success")
-
+    flash("Compra finalizada!", "success")
     return redirect(url_for("index"))
 
+# --- OUTRAS ROTAS ---
 def listar_produtos():
     conn = conectar()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM produtos")
     resultado = cursor.fetchall()
     conn.close()
-    
-    produtos = [
+    return [
         {
             "id": row[0],
             "nome": row[1],
@@ -159,34 +212,33 @@ def listar_produtos():
             "validade": row[4],
             "estoque": row[5],
             "codigo": row[6],
-        }
-        for row in resultado
+        } for row in resultado
     ]
-    return produtos
 
 @app.route("/lista")
+@login_required
 def lista():
     produtos = listar_produtos()
     return render_template("lista.html", produtos=produtos)
 
 @app.route("/cadastro")
+@admin_required
 def cadastro():
     return render_template("cadastro.html")
 
 @app.route("/relatorio")
+@admin_required
 def relatorio():
     conn = conectar()
     cursor = conn.cursor()
-
     cursor.execute("SELECT nome, preco, quantidade, total, data_venda FROM vendas ORDER BY data_venda DESC")
     vendas = cursor.fetchall()
-
     lucro_total = sum(row[3] for row in vendas)
-
     conn.close()
     return render_template("relatorio.html", vendas=vendas, lucro_total=lucro_total)
 
 @app.route("/adicionar", methods=["POST"])
+@admin_required
 def adicionar():
     nome = request.form["nome"]
     peso = request.form["peso"]
@@ -197,14 +249,12 @@ def adicionar():
 
     conn = conectar()
     cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO produtos (nome, peso, preco, validade, estoque, codigo)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (nome, peso, preco, validade, estoque, codigo))
+    cursor.execute("""INSERT INTO produtos (nome, peso, preco, validade, estoque, codigo)
+                      VALUES (?, ?, ?, ?, ?, ?)""",
+                   (nome, peso, preco, validade, estoque, codigo))
     conn.commit()
     conn.close()
-
     return redirect(url_for("lista"))
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=True)
