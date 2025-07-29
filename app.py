@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
 from banco import inicializar_banco
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "GodIsTheTrue11"
@@ -107,7 +108,6 @@ def finalizar():
     conn = conectar()
     cursor = conn.cursor()
 
-    # Verificar estoque
     for id_produto, item in carrinho.items():
         cursor.execute("SELECT estoque FROM produtos WHERE id = ?", (id_produto,))
         estoque_atual = cursor.fetchone()
@@ -120,22 +120,29 @@ def finalizar():
             flash(f"Estoque insuficiente para o produto {item['nome']}.", "error")
             return redirect(url_for("index"))
 
-    # Atualizar estoque
     for id_produto, item in carrinho.items():
         cursor.execute(
             "UPDATE produtos SET estoque = estoque - ? WHERE id = ?",
             (item["quantidade"], id_produto)
         )
+
+        total = item["preco"] * item["quantidade"]
+        data = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        cursor.execute("""
+            INSERT INTO vendas (nome, preco, quantidade, total, data_venda)
+            VALUES (?, ?, ?, ?, ?)
+        """, (item["nome"], item["preco"], item["quantidade"], total, data))
+
     conn.commit()
     conn.close()
 
     session.pop("carrinho", None)
     session.pop("ultimo_id", None)
-    flash("Compra finalizada com sucesso!", "success")
+    flash("Compra finalizada e registrada com sucesso!", "success")
 
     return redirect(url_for("index"))
 
-# Rotas para as outras páginas já existentes
 def listar_produtos():
     conn = conectar()
     cursor = conn.cursor()
@@ -168,7 +175,16 @@ def cadastro():
 
 @app.route("/relatorio")
 def relatorio():
-    return render_template("relatorio.html")
+    conn = conectar()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT nome, preco, quantidade, total, data_venda FROM vendas ORDER BY data_venda DESC")
+    vendas = cursor.fetchall()
+
+    lucro_total = sum(row[3] for row in vendas)
+
+    conn.close()
+    return render_template("relatorio.html", vendas=vendas, lucro_total=lucro_total)
 
 @app.route("/adicionar", methods=["POST"])
 def adicionar():

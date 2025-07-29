@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rélatorio de Vendas</title>
+    <title>Relatório de Vendas</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
@@ -11,18 +11,50 @@
   </head>
   <body>
     <nav class="nav-top">
-      <a href="{{url_for('lista')}}">Lista</a>
-      <a href="{{url_for('cadastro')}}">Cadastrar</a>
+      <a href="{{ url_for('lista') }}">Lista</a>
+      <a href="{{ url_for('cadastro') }}">Cadastrar</a>
       <a href="{{ url_for('relatorio') }}">Relatório</a>
     </nav>
-    <main>
+
+    <main style="padding: 20px">
       <div class="left">
-        <h2>Relatório de Vendas:</h2>
+        <h2>Relatório de Vendas</h2>
+
+        <table
+          border="1"
+          cellpadding="10"
+          style="width: 100%; margin-top: 20px"
+        >
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Preço (R$)</th>
+              <th>Quantidade</th>
+              <th>Total (R$)</th>
+              <th>Data da Venda</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for venda in vendas %}
+            <tr>
+              <td>{{ venda[0] }}</td>
+              <td>{{ "%.2f"|format(venda[1]) }}</td>
+              <td>{{ venda[2] }}</td>
+              <td>{{ "%.2f"|format(venda[3]) }}</td>
+              <td>{{ venda[4][:16] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <h3 style="margin-top: 20px">
+          Lucro Total: R$ {{ "%.2f"|format(lucro_total) }}
+        </h3>
       </div>
     </main>
 
     <nav class="nav-footer">
-      <a href="{{url_for('index')}}">Início</a>
+      <a href="{{ url_for('index') }}">Início</a>
       <a href="javascript:history.back()">Voltar</a>
     </nav>
   </body>
