@@ -166,6 +166,10 @@ def lista():
 def cadastro():
     return render_template("cadastro.html")
 
+@app.route("/relatorio")
+def relatorio():
+    return render_template("relatorio.html")
+
 @app.route("/adicionar", methods=["POST"])
 def adicionar():
     nome = request.form["nome"]

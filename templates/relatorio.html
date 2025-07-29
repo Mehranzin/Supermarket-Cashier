@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rélatorio de Vendas</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <nav class="nav-top">
+      <a href="{{url_for('lista')}}">Lista</a>
+      <a href="{{url_for('cadastro')}}">Cadastrar</a>
+      <a href="{{ url_for('relatorio') }}">Relatório</a>
+    </nav>
+    <main>
+      <div class="left">
+        <h2>Relatório de Vendas:</h2>
+      </div>
+    </main>
+
+    <nav class="nav-footer">
+      <a href="{{url_for('index')}}">Início</a>
+      <a href="javascript:history.back()">Voltar</a>
+    </nav>
+  </body>
+</html>
