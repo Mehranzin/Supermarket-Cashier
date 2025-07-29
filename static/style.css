@@ -28,6 +28,8 @@ main .left {
   flex: 3;
   background-color: #4b2e1e;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
 }
 
 main .right {
@@ -36,6 +38,14 @@ main .right {
   padding: 20px;
   display: flex;
   flex-direction: column;
+}
+
+main .left form {
+  margin-top: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 20px;
 }
 
 nav.nav-footer {
