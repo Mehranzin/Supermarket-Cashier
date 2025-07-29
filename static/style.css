@@ -40,14 +40,6 @@ main .right {
   flex-direction: column;
 }
 
-main .left form {
-  margin-top: auto;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding: 20px;
-}
-
 nav.nav-footer {
   position: fixed;
   bottom: 0;
