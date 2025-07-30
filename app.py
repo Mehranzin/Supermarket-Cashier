@@ -55,13 +55,20 @@ def login():
     return render_template("login.html")
 
 @app.route("/register", methods=["GET", "POST"])
-@admin_required
 def register():
     if request.method == "POST":
         nome = request.form["nome"]
         usuario = request.form["usuario"]
         senha = request.form["senha"]
-        cargo = request.form["cargo"]
+        codigo_secreto = request.form["codigo_secreto"]
+
+        if codigo_secreto == "admin011@":
+            cargo = "admin"
+        elif codigo_secreto == "funcionario@":
+            cargo = "funcionario"
+        else:
+            flash("Código de acesso inválido.", "error")
+            return redirect(url_for("register"))
 
         conn = conectar()
         cursor = conn.cursor()
