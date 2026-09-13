@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
-from banco import inicializar_banco
+from banco import inicializar_banco, conectar
 from datetime import datetime
 from functools import wraps
 
@@ -8,9 +8,6 @@ app = Flask(__name__)
 app.secret_key = "GodIsTheTrue11"
 
 inicializar_banco()
-
-def conectar():
-    return sqlite3.connect("produtos.db")
 
 # --- DECORATORS ---
 def login_required(f):
@@ -62,7 +59,7 @@ def register():
         senha = request.form["senha"]
         codigo_secreto = request.form["codigo_secreto"]
 
-        if codigo_secreto == "admin011@":
+        if codigo_secreto == "admin011@":   
             cargo = "admin"
         elif codigo_secreto == "funcionario@":
             cargo = "funcionario"
@@ -104,7 +101,12 @@ def index():
             
         conn = conectar()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM produtos WHERE codigo LIKE ? ORDER BY codigo LIMIT 1", (codigo + '%',))
+        cursor.execute("""
+    SELECT id, nome, peso, preco, validade, estoque, codigo
+    FROM produtos
+    WHERE codigo = ?
+    LIMIT 1
+""", (codigo,))
         produto = cursor.fetchone()
         conn.close()
 
@@ -175,31 +177,78 @@ def remover(id_produto):
 @login_required
 def finalizar():
     carrinho = session.get("carrinho", {})
+
     if not carrinho:
         flash("Carrinho vazio.", "error")
         return redirect(url_for("index"))
 
     conn = conectar()
-    cursor = conn.cursor()
 
-    for id_produto, item in carrinho.items():
-        cursor.execute("SELECT estoque FROM produtos WHERE id = ?", (id_produto,))
-        estoque_atual = cursor.fetchone()
-        if not estoque_atual or estoque_atual[0] < item["quantidade"]:
-            conn.close()
-            flash(f"Estoque insuficiente para {item['nome']}.", "error")
-            return redirect(url_for("index"))
+    try:
+        cursor = conn.cursor()
 
-    for id_produto, item in carrinho.items():
-        cursor.execute("UPDATE produtos SET estoque = estoque - ? WHERE id = ?", (item["quantidade"], id_produto))
-        total = item["preco"] * item["quantidade"]
-        data = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cursor.execute("INSERT INTO vendas (nome, preco, quantidade, total, data_venda) VALUES (?, ?, ?, ?, ?)",
-                       (item["nome"], item["preco"], item["quantidade"], total, data))
+        # Impede duas vendas simultâneas de consumirem
+        # o mesmo estoque incorretamente.
+        cursor.execute("BEGIN IMMEDIATE")
 
-    conn.commit()
-    conn.close()
+        for id_produto, item in carrinho.items():
+            cursor.execute("""
+                UPDATE produtos
+                SET estoque = estoque - ?
+                WHERE id = ?
+                  AND estoque >= ?
+            """, (
+                item["quantidade"],
+                int(id_produto),
+                item["quantidade"]
+            ))
+
+            if cursor.rowcount != 1:
+                conn.rollback()
+                flash(
+                    f"Estoque insuficiente para {item['nome']}.",
+                    "error"
+                )
+                return redirect(url_for("index"))
+
+            total = item["preco"] * item["quantidade"]
+
+            data = datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+
+            cursor.execute("""
+                INSERT INTO vendas (
+                    nome,
+                    preco,
+                    quantidade,
+                    total,
+                    data_venda
+                )
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                item["nome"],
+                item["preco"],
+                item["quantidade"],
+                total,
+                data
+            ))
+
+        conn.commit()
+
+    except sqlite3.Error:
+        conn.rollback()
+        flash(
+            "Erro ao finalizar a venda. Nenhuma alteração foi realizada.",
+            "error"
+        )
+        return redirect(url_for("index"))
+
+    finally:
+        conn.close()
+
     session.pop("carrinho", None)
+
     flash("Compra finalizada!", "success")
     return redirect(url_for("index"))
 
