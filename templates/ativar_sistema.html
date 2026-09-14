@@ -1,10 +1,9 @@
-```html
 <!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login</title>
+    <title>Ativar Sistema</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
@@ -12,7 +11,9 @@
   </head>
   <body>
     <div class="container">
-      <h1>Login</h1>
+      <h1>Ativar Sistema</h1>
+
+      <p>Ative o sistema para criar o usuário Master.</p>
 
       {% with messages = get_flashed_messages(with_categories=true) %} {% if
       messages %} {% for category, message in messages %}
@@ -20,15 +21,12 @@
       {% endfor %} {% endif %} {% endwith %}
 
       <form method="POST">
-        <label for="usuario">Usuário:</label>
-        <input type="text" id="usuario" name="usuario" required autofocus />
+        <label for="senha"> Senha de ativação: </label>
 
-        <label for="senha">Senha:</label>
         <input type="password" id="senha" name="senha" required />
 
-        <button type="submit">Entrar</button>
+        <button type="submit">Ativar Sistema</button>
       </form>
     </div>
   </body>
 </html>
-```
