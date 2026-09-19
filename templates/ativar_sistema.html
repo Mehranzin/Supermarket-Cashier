@@ -1,32 +1,66 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Ativar Sistema</title>
+
     <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
-    />
-  </head>
-  <body>
-    <div class="container">
-      <h1>Ativar Sistema</h1>
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+</head>
 
-      <p>Ative o sistema para criar o usuário Master.</p>
+<body>
 
-      {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %} {% for category, message in messages %}
-      <div class="flash {{ category }}">{{ message }}</div>
-      {% endfor %} {% endif %} {% endwith %}
+<div class="container">
 
-      <form method="POST">
-        <label for="senha"> Senha de ativação: </label>
+    <h1>Ativar Sistema</h1>
 
-        <input type="password" id="senha" name="senha" required />
+    <p>
+        Digite a chave Master para ativar esta instalação.
+    </p>
 
-        <button type="submit">Ativar Sistema</button>
-      </form>
-    </div>
-  </body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+                <div class="flash {{ category }}">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+    <form method="POST">
+
+        <label for="chave">
+            Chave de ativação
+        </label>
+
+        <input
+            type="password"
+            id="chave"
+            name="chave"
+            required
+            autocomplete="off"
+        >
+
+        <button type="submit">
+            Ativar Sistema
+        </button>
+
+    </form>
+
+</div>
+
+</body>
+
 </html>

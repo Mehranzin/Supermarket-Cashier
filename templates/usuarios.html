@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Usuários</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Usuários</h1>
+
+    <a href="{{ url_for('index') }}">
+        Voltar
+    </a>
+
+    <hr>
+
+    {% for usuario in usuarios %}
+
+        <div>
+
+            <strong>{{ usuario["nome"] }}</strong>
+
+            <p>
+                Usuário: {{ usuario["usuario"] }}
+            </p>
+
+            <p>
+                Cargo: {{ usuario["cargo"] }}
+            </p>
+
+            <p>
+                Status:
+                {% if usuario["ativo"] %}
+                    Ativo
+                {% else %}
+                    Inativo
+                {% endif %}
+            </p>
+
+            <hr>
+
+        </div>
+
+    {% else %}
+
+        <p>Nenhum usuário cadastrado.</p>
+
+    {% endfor %}
+
+    {% if session.get("cargo") == "master" %}
+
+        <a href="{{ url_for('criar_admin') }}">
+            Criar administrador
+        </a>
+
+    {% endif %}
+
+    <br>
+
+    <a href="{{ url_for('criar_funcionario') }}">
+        Criar funcionário
+    </a>
+
+</div>
+
+</body>
+
+</html>

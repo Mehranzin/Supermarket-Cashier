@@ -1,3 +1,10 @@
-produtos.db
-__pycache__
-banco.cpython-313
+database/*.db
+database/*.key
+
+__pycache__/
+*.pyc
+
+.venv/
+venv/
+
+.env
