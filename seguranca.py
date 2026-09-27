@@ -35,7 +35,7 @@ def carregar_secret_key():
 # ============================================================
 
 
-MASTER_ACTIVATION_HASH = "scrypt:32768:8:1$Z1VHL7Ys59Gtif9E$23c88748b9dd9b9ba186c07cf4b8a2776a03fb41b64c3999044e78b260a26a4b9a9a484cb371768604a4b6c11e40cd98cea712ac2e7f5b6447b09847ba7d9457"
+MASTER_ACTIVATION_HASH = "scrypt:32768:8:1$iVXFsSXPTNNB9EUs$a113790115594f32608057d7be1c849eeb246a8d0a9850f62a580fe1eb6877132798e3589d1bf7d81b007d92a04d236128439536f44ae2b6f60bae185993cca3"
 
 
 def validar_chave_master(chave):

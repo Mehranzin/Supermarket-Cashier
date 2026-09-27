@@ -33,6 +33,8 @@ from functools import wraps
 
 app = Flask(__name__)
 
+inicializar_bancos()
+
 app.secret_key = carregar_secret_key()
 
 app.config["SESSION_COOKIE_HTTPONLY"] = True
@@ -1278,8 +1280,7 @@ def listar_produtos():
         FROM produtos
         WHERE cliente_id = ?
         ORDER BY nome
-    """)
-    (session["cliente_id"],)
+    """, (session["cliente_id"],))
 
     resultado = cursor.fetchall()
 
