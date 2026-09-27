@@ -23,7 +23,7 @@ from seguranca import (
     criar_hash_senha
 )
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 
 
@@ -38,8 +38,63 @@ app.secret_key = carregar_secret_key()
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
-inicializar_bancos()
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(
+    minutes=2
+)
 
+app.config["SESSION_REFRESH_EACH_REQUEST"] = True
+
+@app.before_request
+def verificar_sessao():
+
+    if "usuario_id" not in session:
+        return
+
+    ultima_atividade = session.get("ultima_atividade")
+
+    if not ultima_atividade:
+
+        session.clear()
+
+        return redirect(
+            url_for("login")
+        )
+
+    try:
+
+        ultima = datetime.fromtimestamp(
+            ultima_atividade
+        )
+
+    except (TypeError, ValueError):
+
+        session.clear()
+
+        return redirect(
+            url_for("login")
+        )
+
+    agora = datetime.now()
+
+    tempo_inativo = (
+        agora - ultima
+    ).total_seconds()
+
+    if tempo_inativo >= 120:
+
+        session.clear()
+
+        flash(
+            "Sua sessão expirou. Faça login novamente.",
+            "error"
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
+    session["ultima_atividade"] = agora.timestamp()
+    session.permanent = True
 
 # ============================================================
 # DECORATORS
@@ -197,6 +252,7 @@ def login():
         cursor.execute("""
             SELECT
                 id,
+                cliente_id,
                 nome,
                 senha_hash,
                 cargo,
@@ -267,10 +323,13 @@ def login():
 
         session.clear()
 
+        session.permanent = True
+
         session["usuario_id"] = user["id"]
         session["nome"] = user["nome"]
         session["cargo"] = user["cargo"]
-
+        session["cliente_id"] = user["cliente_id"]
+        session["ultima_atividade"] = datetime.now().timestamp()
         flash(
             f"Bem-vindo, {user['nome']}!",
             "success"
@@ -408,14 +467,13 @@ def usuarios():
     cursor.execute("""
         SELECT
             id,
+            cliente_id,
             nome,
-            usuario,
+            senha_hash,
             cargo,
-            ativo,
-            criado_em,
-            ultimo_login
+            ativo
         FROM usuarios
-        WHERE cargo != 'master'
+        WHERE usuario = ?
         ORDER BY nome
     """)
 
@@ -628,6 +686,179 @@ def criar_funcionario():
         "criar_funcionario.html"
     )
 
+# ============================================================
+# MASTER-CLIENTES
+# ============================================================
+
+
+@app.route("/master/clientes")
+@master_required
+def clientes():
+
+    conn = conectar_usuarios()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            id,
+            nome,
+            criado_em,
+            ativo
+        FROM clientes
+        ORDER BY nome
+    """)
+
+    clientes = cursor.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "clientes.html",
+        clientes=clientes
+    )
+
+# ============================================================
+# CRIAR MASTER-CLIENTES
+# ============================================================
+
+
+@app.route(
+    "/master/criar-cliente",
+    methods=["GET", "POST"]
+)
+@master_required
+def criar_cliente():
+
+    if request.method == "POST":
+
+        nome_cliente = request.form.get(
+            "nome_cliente",
+            ""
+        ).strip()
+
+        nome_usuario = request.form.get(
+            "nome_usuario",
+            ""
+        ).strip()
+
+        usuario = request.form.get(
+            "usuario",
+            ""
+        ).strip()
+
+        senha = request.form.get(
+            "senha",
+            ""
+        )
+
+        if not nome_cliente:
+            flash(
+                "Informe o nome da empresa.",
+                "error"
+            )
+
+            return redirect(
+                url_for("criar_cliente")
+            )
+
+        if not nome_usuario:
+            flash(
+                "Informe o nome do responsável.",
+                "error"
+            )
+
+            return redirect(
+                url_for("criar_cliente")
+            )
+
+        if not usuario:
+            flash(
+                "Informe o usuário.",
+                "error"
+            )
+
+            return redirect(
+                url_for("criar_cliente")
+            )
+
+        if len(senha) < 8:
+
+            flash(
+                "A senha deve possuir pelo menos 8 caracteres.",
+                "error"
+            )
+
+            return redirect(
+                url_for("criar_cliente")
+            )
+
+        conn = conectar_usuarios()
+        cursor = conn.cursor()
+
+        try:
+
+            # Criar empresa
+            cursor.execute("""
+                INSERT INTO clientes
+                (
+                    nome
+                )
+                VALUES (?)
+            """, (
+                nome_cliente,
+            ))
+
+            cliente_id = cursor.lastrowid
+
+            # Criar usuário dono da empresa
+            cursor.execute("""
+                INSERT INTO usuarios
+                (
+                    cliente_id,
+                    nome,
+                    usuario,
+                    senha_hash,
+                    cargo,
+                    ativo
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                cliente_id,
+                nome_usuario,
+                usuario,
+                criar_hash_senha(senha),
+                "cliente",
+                1
+            ))
+
+            conn.commit()
+
+            flash(
+                "Cliente criado com sucesso.",
+                "success"
+            )
+
+        except sqlite3.IntegrityError:
+
+            conn.rollback()
+
+            flash(
+                "Esse nome de usuário já existe.",
+                "error"
+            )
+
+        finally:
+
+            conn.close()
+
+        return redirect(
+            url_for("clientes")
+        )
+
+    return render_template(
+        "criar_cliente.html"
+    )
+
 
 # ============================================================
 # LOGOUT
@@ -714,8 +945,9 @@ def index():
             SELECT *
             FROM produtos
             WHERE codigo = ?
+            AND cliente_id = ?
             LIMIT 1
-        """, (codigo,))
+        """, (codigo, session["cliente_id"]))
 
         produto = cursor.fetchone()
 
@@ -944,12 +1176,14 @@ def finalizar():
         cursor_vendas.execute("""
             INSERT INTO vendas
             (
+                cliente_id,
                 usuario_id,
                 data_venda,
                 total
             )
-            VALUES (?, ?, ?)
+            VALUES (?, ?, ?, ?)
         """, (
+            session["cliente_id"],
             session["usuario_id"],
             data,
             total_venda
@@ -1042,8 +1276,10 @@ def listar_produtos():
     cursor.execute("""
         SELECT *
         FROM produtos
+        WHERE cliente_id = ?
         ORDER BY nome
     """)
+    (session["cliente_id"],)
 
     resultado = cursor.fetchall()
 
@@ -1098,8 +1334,10 @@ def relatorio():
         FROM itens_venda iv
         INNER JOIN vendas v
             ON iv.venda_id = v.id
+        WHERE v.cliente_id = ?
         ORDER BY v.data_venda DESC
     """)
+    (session["cliente_id"],)
 
     vendas = cursor.fetchall()
 
@@ -1205,6 +1443,7 @@ def adicionar():
         cursor.execute("""
             INSERT INTO produtos
             (
+                cliente_id,
                 nome,
                 peso,
                 preco,
@@ -1212,8 +1451,10 @@ def adicionar():
                 estoque,
                 codigo
             )
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+(
+            session["cliente_id"],
             nome,
             peso,
             preco,

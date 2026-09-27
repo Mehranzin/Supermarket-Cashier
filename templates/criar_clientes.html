@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Criar Cliente</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Criar Cliente</h1>
+
+    <form method="POST">
+
+        <label>
+            Nome da empresa
+        </label>
+
+        <input
+            type="text"
+            name="nome_cliente"
+            required
+        >
+
+        <label>
+            Nome do responsável
+        </label>
+
+        <input
+            type="text"
+            name="nome_usuario"
+            required
+        >
+
+        <label>
+            Usuário
+        </label>
+
+        <input
+            type="text"
+            name="usuario"
+            required
+        >
+
+        <label>
+            Senha
+        </label>
+
+        <input
+            type="password"
+            name="senha"
+            minlength="8"
+            required
+        >
+
+        <button type="submit">
+            Criar cliente
+        </button>
+
+    </form>
+
+</div>
+
+</body>
+
+</html>

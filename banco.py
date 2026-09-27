@@ -8,6 +8,10 @@ DATABASE_DIR = BASE_DIR / "database"
 DATABASE_DIR.mkdir(exist_ok=True)
 
 
+# ============================================================
+# CONEXÕES
+# ============================================================
+
 def conectar_usuarios():
     conn = sqlite3.connect(DATABASE_DIR / "usuarios.db")
     conn.row_factory = sqlite3.Row
@@ -26,58 +30,164 @@ def conectar_vendas():
     return conn
 
 
+# ============================================================
+# CLIENTES
+# ============================================================
+
+def inicializar_clientes():
+
+    conn = conectar_usuarios()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS clientes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT NOT NULL,
+            criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            ativo INTEGER NOT NULL DEFAULT 1
+        )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+# ============================================================
+# USUÁRIOS
+# ============================================================
+
 def inicializar_usuarios():
+
     conn = conectar_usuarios()
     cursor = conn.cursor()
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            cliente_id INTEGER,
+
             nome TEXT NOT NULL,
+
             usuario TEXT NOT NULL UNIQUE,
+
             senha_hash TEXT NOT NULL,
+
             cargo TEXT NOT NULL CHECK (
-                cargo IN ('master', 'admin', 'funcionario')
+                cargo IN (
+                    'master',
+                    'cliente',
+                    'admin',
+                    'funcionario'
+                )
             ),
+
             ativo INTEGER NOT NULL DEFAULT 1,
+
             criado_em TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
             ultimo_login TEXT
         )
     """)
+
+    # --------------------------------------------------------
+    # MIGRAÇÃO DE BANCO ANTIGO
+    # --------------------------------------------------------
+
+    cursor.execute("""
+        PRAGMA table_info(usuarios)
+    """)
+
+    colunas = [
+        coluna["name"]
+        for coluna in cursor.fetchall()
+    ]
+
+    if "cliente_id" not in colunas:
+
+        cursor.execute("""
+            ALTER TABLE usuarios
+            ADD COLUMN cliente_id INTEGER
+        """)
 
     conn.commit()
     conn.close()
 
 
+# ============================================================
+# PRODUTOS
+# ============================================================
+
 def inicializar_produtos():
+
     conn = conectar_produtos()
     cursor = conn.cursor()
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS produtos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            cliente_id INTEGER NOT NULL,
+
             nome TEXT NOT NULL,
+
             peso TEXT,
+
             preco REAL NOT NULL,
+
             validade TEXT,
+
             estoque INTEGER NOT NULL DEFAULT 0,
-            codigo TEXT UNIQUE NOT NULL
+
+            codigo TEXT NOT NULL,
+
+            UNIQUE(cliente_id, codigo)
         )
     """)
+
+    # --------------------------------------------------------
+    # MIGRAÇÃO DE BANCO ANTIGO
+    # --------------------------------------------------------
+
+    cursor.execute("""
+        PRAGMA table_info(produtos)
+    """)
+
+    colunas = [
+        coluna["name"]
+        for coluna in cursor.fetchall()
+    ]
+
+    if "cliente_id" not in colunas:
+
+        cursor.execute("""
+            ALTER TABLE produtos
+            ADD COLUMN cliente_id INTEGER
+        """)
 
     conn.commit()
     conn.close()
 
 
+# ============================================================
+# VENDAS
+# ============================================================
+
 def inicializar_vendas():
+
     conn = conectar_vendas()
     cursor = conn.cursor()
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS vendas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            cliente_id INTEGER NOT NULL,
+
             usuario_id INTEGER NOT NULL,
+
             data_venda TEXT NOT NULL,
+
             total REAL NOT NULL
         )
     """)
@@ -85,20 +195,55 @@ def inicializar_vendas():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS itens_venda (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+
             venda_id INTEGER NOT NULL,
+
             produto_id INTEGER NOT NULL,
+
             nome_produto TEXT NOT NULL,
+
             preco_unitario REAL NOT NULL,
+
             quantidade INTEGER NOT NULL,
+
             subtotal REAL NOT NULL
         )
     """)
+
+    # --------------------------------------------------------
+    # MIGRAÇÃO DE BANCO ANTIGO
+    # --------------------------------------------------------
+
+    cursor.execute("""
+        PRAGMA table_info(vendas)
+    """)
+
+    colunas = [
+        coluna["name"]
+        for coluna in cursor.fetchall()
+    ]
+
+    if "cliente_id" not in colunas:
+
+        cursor.execute("""
+            ALTER TABLE vendas
+            ADD COLUMN cliente_id INTEGER
+        """)
 
     conn.commit()
     conn.close()
 
 
+# ============================================================
+# INICIALIZAÇÃO GERAL
+# ============================================================
+
 def inicializar_bancos():
+
+    inicializar_clientes()
+
     inicializar_usuarios()
+
     inicializar_produtos()
+
     inicializar_vendas()
