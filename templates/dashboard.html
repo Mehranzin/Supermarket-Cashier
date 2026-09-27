@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Alemomn — Master</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+<body class="master-body">
+
+<div class="master-layout">
+
+    <aside class="master-sidebar">
+
+        <div class="master-logo">
+            <div class="master-logo-mark">A</div>
+
+            <div>
+                <strong>Alemomn</strong>
+                <small>MASTER PANEL</small>
+            </div>
+        </div>
+
+        <nav>
+
+            <a
+                href="{{ url_for('master_dashboard') }}"
+                class="master-nav-active"
+            >
+                Dashboard
+            </a>
+
+            <a href="#empresas">
+                Empresas
+            </a>
+
+            <a href="#usuarios">
+                Usuários
+            </a>
+
+            <a href="{{ url_for('clientes') }}">
+                Clientes
+            </a>
+
+            <a href="{{ url_for('usuarios') }}">
+                Usuários antigos
+            </a>
+
+        </nav>
+
+        <div class="master-sidebar-bottom">
+
+            <div class="master-user">
+
+                <span class="master-avatar">
+                    {{ session["nome"][0]|upper }}
+                </span>
+
+                <div>
+                    <strong>{{ session["nome"] }}</strong>
+                    <small>Master</small>
+                </div>
+
+            </div>
+
+            <a
+                href="{{ url_for('logout') }}"
+                class="master-logout"
+            >
+                Sair
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <main class="master-main">
+
+        <header class="master-header">
+
+            <div>
+
+                <span class="master-eyebrow">
+                    CONTROLE DO SISTEMA
+                </span>
+
+                <h1>
+                    Dashboard
+                </h1>
+
+                <p>
+                    Visão geral de todas as empresas e usuários.
+                </p>
+
+            </div>
+
+            <div class="master-status">
+
+                <span></span>
+
+                Sistema operacional
+
+            </div>
+
+        </header>
+
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% for category, message in messages %}
+
+                <div class="master-alert {{ category }}">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        {% endwith %}
+
+
+        <section class="master-stats">
+
+            <div class="master-stat">
+
+                <span>Empresas</span>
+
+                <strong>
+                    {{ total_clientes }}
+                </strong>
+
+                <small>
+                    clientes cadastrados
+                </small>
+
+            </div>
+
+
+            <div class="master-stat">
+
+                <span>Administradores</span>
+
+                <strong>
+                    {{ total_admins }}
+                </strong>
+
+                <small>
+                    gestores das empresas
+                </small>
+
+            </div>
+
+
+            <div class="master-stat">
+
+                <span>Funcionários</span>
+
+                <strong>
+                    {{ total_funcionarios }}
+                </strong>
+
+                <small>
+                    usuários operacionais
+                </small>
+
+            </div>
+
+
+            <div class="master-stat">
+
+                <span>Produtos</span>
+
+                <strong>
+                    {{ total_produtos }}
+                </strong>
+
+                <small>
+                    produtos cadastrados
+                </small>
+
+            </div>
+
+
+            <div class="master-stat">
+
+                <span>Vendas</span>
+
+                <strong>
+                    {{ total_vendas }}
+                </strong>
+
+                <small>
+                    vendas registradas
+                </small>
+
+            </div>
+
+
+            <div class="master-stat master-stat-money">
+
+                <span>Faturamento</span>
+
+                <strong>
+                    R$ {{ "%.2f"|format(faturamento) }}
+                </strong>
+
+                <small>
+                    vendas registradas
+                </small>
+
+            </div>
+
+        </section>
+
+
+        <section class="master-section">
+
+            <div class="master-section-title">
+
+                <div>
+
+                    <span class="master-eyebrow">
+                        GESTÃO
+                    </span>
+
+                    <h2>
+                        Ações rápidas
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="master-actions">
+
+                <a
+                    href="{{ url_for('criar_cliente') }}"
+                    class="master-action"
+                >
+                    <strong>+</strong>
+                    <span>
+                        Nova empresa
+                    </span>
+                    <small>
+                        Criar cliente e acesso
+                    </small>
+                </a>
+
+
+                <a
+                    href="{{ url_for('criar_admin') }}"
+                    class="master-action"
+                >
+                    <strong>+</strong>
+                    <span>
+                        Novo administrador
+                    </span>
+                    <small>
+                        Vincular gestor a uma empresa
+                    </small>
+                </a>
+
+
+                <a
+                    href="{{ url_for('criar_funcionario') }}"
+                    class="master-action"
+                >
+                    <strong>+</strong>
+                    <span>
+                        Novo funcionário
+                    </span>
+                    <small>
+                        Criar acesso operacional
+                    </small>
+                </a>
+
+            </div>
+
+        </section>
+
+
+        <section
+            class="master-section"
+            id="empresas"
+        >
+
+            <div class="master-section-title">
+
+                <div>
+
+                    <span class="master-eyebrow">
+                        CLIENTES
+                    </span>
+
+                    <h2>
+                        Empresas
+                    </h2>
+
+                </div>
+
+                <a
+                    href="{{ url_for('criar_cliente') }}"
+                    class="master-button"
+                >
+                    + Nova empresa
+                </a>
+
+            </div>
+
+
+            <div class="master-table-wrapper">
+
+                <table class="master-table">
+
+                    <thead>
+
+                        <tr>
+                            <th>Empresa</th>
+                            <th>ID</th>
+                            <th>Usuários</th>
+                            <th>Criada em</th>
+                            <th>Status</th>
+                            <th>Ação</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                    {% for cliente in clientes %}
+
+                        <tr>
+
+                            <td>
+                                <strong>
+                                    {{ cliente["nome"] }}
+                                </strong>
+                            </td>
+
+                            <td>
+                                #{{ cliente["id"] }}
+                            </td>
+
+                            <td>
+                                {{ cliente["total_usuarios"] }}
+                            </td>
+
+                            <td>
+                                {{ cliente["criado_em"] }}
+                            </td>
+
+                            <td>
+
+                                {% if cliente["ativo"] %}
+
+                                    <span class="master-badge active">
+                                        Ativo
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="master-badge inactive">
+                                        Inativo
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for('toggle_cliente', cliente_id=cliente['id']) }}"
+                                >
+
+                                    <button
+                                        class="master-table-button"
+                                        type="submit"
+                                    >
+
+                                        {% if cliente["ativo"] %}
+                                            Desativar
+                                        {% else %}
+                                            Ativar
+                                        {% endif %}
+
+                                    </button>
+
+                                </form>
+
+                            </td>
+
+                        </tr>
+
+                    {% else %}
+
+                        <tr>
+
+                            <td colspan="6">
+                                Nenhuma empresa cadastrada.
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+        <section
+            class="master-section"
+            id="usuarios"
+        >
+
+            <div class="master-section-title">
+
+                <div>
+
+                    <span class="master-eyebrow">
+                        ACESSOS
+                    </span>
+
+                    <h2>
+                        Usuários do sistema
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="master-table-wrapper">
+
+                <table class="master-table">
+
+                    <thead>
+
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Login</th>
+                            <th>Empresa</th>
+                            <th>Cargo</th>
+                            <th>Último login</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                    {% for usuario in usuarios %}
+
+                        <tr>
+
+                            <td>
+                                <strong>
+                                    {{ usuario["nome"] }}
+                                </strong>
+                            </td>
+
+                            <td>
+                                {{ usuario["usuario"] }}
+                            </td>
+
+                            <td>
+                                {% if usuario["cliente_nome"] %}
+                                    {{ usuario["cliente_nome"] }}
+                                {% else %}
+                                    Sistema
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {{ usuario["cargo"]|capitalize }}
+                            </td>
+
+                            <td>
+                                {{ usuario["ultimo_login"] or "Nunca" }}
+                            </td>
+
+                            <td>
+
+                                {% if usuario["ativo"] %}
+
+                                    <span class="master-badge active">
+                                        Ativo
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="master-badge inactive">
+                                        Inativo
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if usuario["cargo"] != "master" %}
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('toggle_usuario', usuario_id=usuario['id']) }}"
+                                    >
+
+                                        <button
+                                            class="master-table-button"
+                                            type="submit"
+                                        >
+
+                                            {% if usuario["ativo"] %}
+                                                Bloquear
+                                            {% else %}
+                                                Ativar
+                                            {% endif %}
+
+                                        </button>
+
+                                    </form>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+</body>
+
+</html>

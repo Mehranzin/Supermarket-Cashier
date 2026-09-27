@@ -221,6 +221,11 @@ def login():
 
     if "usuario_id" in session:
 
+        if user["cargo"] == "master":
+            return redirect(
+                url_for("master_dashboard")
+            )
+
         return redirect(
             url_for("index")
         )
@@ -488,6 +493,74 @@ def usuarios():
         usuarios=usuarios
     )
 
+@app.route(
+    "/master/usuario/<int:usuario_id>/toggle",
+    methods=["POST"]
+)
+@master_required
+def toggle_usuario(usuario_id):
+
+    conn = conectar_usuarios()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            ativo,
+            cargo
+        FROM usuarios
+        WHERE id = ?
+    """, (usuario_id,))
+
+    usuario = cursor.fetchone()
+
+    if not usuario:
+
+        conn.close()
+
+        flash(
+            "Usuário não encontrado.",
+            "error"
+        )
+
+        return redirect(
+            url_for("master_dashboard")
+        )
+
+    if usuario["cargo"] == "master":
+
+        conn.close()
+
+        flash(
+            "O Master principal não pode ser desativado.",
+            "error"
+        )
+
+        return redirect(
+            url_for("master_dashboard")
+        )
+
+    novo_status = 0 if usuario["ativo"] else 1
+
+    cursor.execute("""
+        UPDATE usuarios
+        SET ativo = ?
+        WHERE id = ?
+    """, (
+        novo_status,
+        usuario_id
+    ))
+
+    conn.commit()
+    conn.close()
+
+    flash(
+        "Usuário atualizado com sucesso.",
+        "success"
+    )
+
+    return redirect(
+        url_for("master_dashboard")
+    )
 
 # ============================================================
 # CRIAR ADMIN
@@ -499,6 +572,18 @@ def usuarios():
 )
 @master_required
 def criar_admin():
+
+    conn = conectar_usuarios()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, nome
+        FROM clientes
+        WHERE ativo = 1
+        ORDER BY nome
+    """)
+
+    clientes = cursor.fetchall()
 
     if request.method == "POST":
 
@@ -517,7 +602,14 @@ def criar_admin():
             ""
         )
 
-        if not nome or not usuario or not senha:
+        cliente_id = request.form.get(
+            "cliente_id",
+            ""
+        ).strip()
+
+        if not nome or not usuario or not senha or not cliente_id:
+
+            conn.close()
 
             flash(
                 "Todos os campos são obrigatórios.",
@@ -525,10 +617,12 @@ def criar_admin():
             )
 
             return redirect(
-                url_for("criar_admin")
+                url_for("master_dashboard")
             )
 
         if len(senha) < 8:
+
+            conn.close()
 
             flash(
                 "A senha deve possuir pelo menos 8 caracteres.",
@@ -536,25 +630,24 @@ def criar_admin():
             )
 
             return redirect(
-                url_for("criar_admin")
+                url_for("master_dashboard")
             )
-
-        conn = conectar_usuarios()
-        cursor = conn.cursor()
 
         try:
 
             cursor.execute("""
                 INSERT INTO usuarios
                 (
+                    cliente_id,
                     nome,
                     usuario,
                     senha_hash,
                     cargo,
                     ativo
                 )
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?)
             """, (
+                cliente_id,
                 nome,
                 usuario,
                 criar_hash_senha(senha),
@@ -571,6 +664,8 @@ def criar_admin():
 
         except sqlite3.IntegrityError:
 
+            conn.rollback()
+
             flash(
                 "Esse nome de usuário já existe.",
                 "error"
@@ -581,11 +676,14 @@ def criar_admin():
             conn.close()
 
         return redirect(
-            url_for("usuarios")
+            url_for("master_dashboard")
         )
 
+    conn.close()
+
     return render_template(
-        "criar_admin.html"
+        "criar_admin.html",
+        clientes=clientes
     )
 
 
@@ -599,6 +697,26 @@ def criar_admin():
 )
 @admin_required
 def criar_funcionario():
+
+    cliente_id_sessao = session.get("cliente_id")
+
+    conn = conectar_usuarios()
+    cursor = conn.cursor()
+
+    if session.get("cargo") == "master":
+
+        cursor.execute("""
+            SELECT id, nome
+            FROM clientes
+            WHERE ativo = 1
+            ORDER BY nome
+        """)
+
+        clientes = cursor.fetchall()
+
+    else:
+
+        clientes = []
 
     if request.method == "POST":
 
@@ -617,7 +735,20 @@ def criar_funcionario():
             ""
         )
 
-        if not nome or not usuario or not senha:
+        if session.get("cargo") == "master":
+
+            cliente_id = request.form.get(
+                "cliente_id",
+                ""
+            ).strip()
+
+        else:
+
+            cliente_id = cliente_id_sessao
+
+        if not nome or not usuario or not senha or not cliente_id:
+
+            conn.close()
 
             flash(
                 "Todos os campos são obrigatórios.",
@@ -625,10 +756,14 @@ def criar_funcionario():
             )
 
             return redirect(
-                url_for("criar_funcionario")
+                url_for("master_dashboard")
+                if session.get("cargo") == "master"
+                else url_for("usuarios")
             )
 
         if len(senha) < 8:
+
+            conn.close()
 
             flash(
                 "A senha deve possuir pelo menos 8 caracteres.",
@@ -636,25 +771,24 @@ def criar_funcionario():
             )
 
             return redirect(
-                url_for("criar_funcionario")
+                url_for("master_dashboard")
             )
-
-        conn = conectar_usuarios()
-        cursor = conn.cursor()
 
         try:
 
             cursor.execute("""
                 INSERT INTO usuarios
                 (
+                    cliente_id,
                     nome,
                     usuario,
                     senha_hash,
                     cargo,
                     ativo
                 )
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?)
             """, (
+                cliente_id,
                 nome,
                 usuario,
                 criar_hash_senha(senha),
@@ -671,6 +805,8 @@ def criar_funcionario():
 
         except sqlite3.IntegrityError:
 
+            conn.rollback()
+
             flash(
                 "Esse nome de usuário já existe.",
                 "error"
@@ -681,12 +817,138 @@ def criar_funcionario():
             conn.close()
 
         return redirect(
-            url_for("usuarios")
+            url_for("master_dashboard")
+            if session.get("cargo") == "master"
+            else url_for("usuarios")
         )
 
+    conn.close()
+
     return render_template(
-        "criar_funcionario.html"
+        "criar_funcionario.html",
+        clientes=clientes
     )
+
+# ============================================================
+# MASTER DASHBOARD
+# ============================================================
+
+@app.route("/master/dashboard")
+@master_required
+def master_dashboard():
+
+    conn_usuarios = conectar_usuarios()
+    cursor_usuarios = conn_usuarios.cursor()
+
+    # Empresas
+    cursor_usuarios.execute("""
+        SELECT
+            c.id,
+            c.nome,
+            c.criado_em,
+            c.ativo,
+            COUNT(u.id) AS total_usuarios
+        FROM clientes c
+        LEFT JOIN usuarios u
+            ON u.cliente_id = c.id
+        GROUP BY c.id
+        ORDER BY c.id DESC
+    """)
+
+    clientes_dashboard = cursor_usuarios.fetchall()
+
+    # Usuários
+    cursor_usuarios.execute("""
+        SELECT
+            u.id,
+            u.nome,
+            u.usuario,
+            u.cargo,
+            u.ativo,
+            u.ultimo_login,
+            c.nome AS cliente_nome
+        FROM usuarios u
+        LEFT JOIN clientes c
+            ON c.id = u.cliente_id
+        ORDER BY u.id DESC
+    """)
+
+    usuarios_dashboard = cursor_usuarios.fetchall()
+
+    # Estatísticas de usuários
+    cursor_usuarios.execute("""
+        SELECT COUNT(*) AS total
+        FROM usuarios
+        WHERE cargo = 'master'
+    """)
+    total_master = cursor_usuarios.fetchone()["total"]
+
+    cursor_usuarios.execute("""
+        SELECT COUNT(*) AS total
+        FROM usuarios
+        WHERE cargo = 'admin'
+    """)
+    total_admins = cursor_usuarios.fetchone()["total"]
+
+    cursor_usuarios.execute("""
+        SELECT COUNT(*) AS total
+        FROM usuarios
+        WHERE cargo = 'funcionario'
+    """)
+    total_funcionarios = cursor_usuarios.fetchone()["total"]
+
+    cursor_usuarios.execute("""
+        SELECT COUNT(*) AS total
+        FROM clientes
+    """)
+    total_clientes = cursor_usuarios.fetchone()["total"]
+
+    conn_usuarios.close()
+
+    # Produtos
+    conn_produtos = conectar_produtos()
+    cursor_produtos = conn_produtos.cursor()
+
+    cursor_produtos.execute("""
+        SELECT COUNT(*) AS total
+        FROM produtos
+    """)
+
+    total_produtos = cursor_produtos.fetchone()["total"]
+
+    conn_produtos.close()
+
+    # Vendas
+    conn_vendas = conectar_vendas()
+    cursor_vendas = conn_vendas.cursor()
+
+    cursor_vendas.execute("""
+        SELECT
+            COUNT(*) AS total_vendas,
+            COALESCE(SUM(total), 0) AS faturamento
+        FROM vendas
+    """)
+
+    vendas_info = cursor_vendas.fetchone()
+
+    total_vendas = vendas_info["total_vendas"]
+    faturamento = vendas_info["faturamento"]
+
+    conn_vendas.close()
+
+    return render_template(
+        "master_dashboard.html",
+        clientes=clientes_dashboard,
+        usuarios=usuarios_dashboard,
+        total_clientes=total_clientes,
+        total_admins=total_admins,
+        total_funcionarios=total_funcionarios,
+        total_produtos=total_produtos,
+        total_vendas=total_vendas,
+        faturamento=faturamento,
+        total_master=total_master
+    )
+
 
 # ============================================================
 # MASTER-CLIENTES
@@ -859,6 +1121,71 @@ def criar_cliente():
 
     return render_template(
         "criar_cliente.html"
+    )
+
+@app.route(
+    "/master/cliente/<int:cliente_id>/toggle",
+    methods=["POST"]
+)
+@master_required
+def toggle_cliente(cliente_id):
+
+    conn = conectar_usuarios()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT ativo
+        FROM clientes
+        WHERE id = ?
+    """, (cliente_id,))
+
+    cliente = cursor.fetchone()
+
+    if not cliente:
+
+        conn.close()
+
+        flash(
+            "Cliente não encontrado.",
+            "error"
+        )
+
+        return redirect(
+            url_for("master_dashboard")
+        )
+
+    novo_status = 0 if cliente["ativo"] else 1
+
+    cursor.execute("""
+        UPDATE clientes
+        SET ativo = ?
+        WHERE id = ?
+    """, (
+        novo_status,
+        cliente_id
+    ))
+
+    # Quando uma empresa é desativada,
+    # todos os seus usuários também ficam bloqueados.
+    cursor.execute("""
+        UPDATE usuarios
+        SET ativo = ?
+        WHERE cliente_id = ?
+    """, (
+        novo_status,
+        cliente_id
+    ))
+
+    conn.commit()
+    conn.close()
+
+    flash(
+        "Cliente atualizado com sucesso.",
+        "success"
+    )
+
+    return redirect(
+        url_for("master_dashboard")
     )
 
 
