@@ -1337,8 +1337,7 @@ def relatorio():
             ON iv.venda_id = v.id
         WHERE v.cliente_id = ?
         ORDER BY v.data_venda DESC
-    """)
-    (session["cliente_id"],)
+    """, (session["cliente_id"],))
 
     vendas = cursor.fetchall()
 
